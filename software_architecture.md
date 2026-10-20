@@ -65,13 +65,14 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
 |  +---------------------------------------------------------------------------------------------+  |
 |  | Layer 1: Hardware I/O, PID Control & Safety (500 Hz - 1 kHz)                                |  |
 |  |  - Motor Encoder Reading (Quadrature/SPI/CAN) -> Joint Position (q) & Velocity (q_dot)      |  |
-|  |  - Closed-Loop Position/Velocity PID & Feedforward Torque Control                         |  |
-|  |  - Fast IMU Sampling (Madgwick/Mahony Filter) & Encoder Tracking Safety Interlocks           |  |
-|  +---------------------------------------------------------------------------------------------+  |
+|  |  - Closed-Loop Position/Velocity PID & Feedforward Torque Control                           |  |
+|  |  - Fast IMU Sampling (Madgwick/Mahony Filter) & Encoder Tracking Safety Interlocks          |  |
+|  +--------------------------------+------------------------------------------------------------+  |
 |                                   |           ^              ^                                    |
-|                                   v           |              |                                    |
-|                                [Motors]     [IMU]    [Motor Encoders]                             |
-+---------------------------------------------------------------------------------------------------+
++-----------------------------------|-----------|--------------|------------------------------------+
+                                    |           |              |                                    
+                                    v           |              |                                    
+                                 [Motors]     [IMU]    [Motor Encoders]                             
 ```
 
 ---
@@ -150,7 +151,7 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
                                  v
                +-----------------------------------+
                |               INIT                |
-               | (Encoder Calib & Zero Verification) |
+               |(Encoder Calib & Zero Verification)|
                +-----------------+-----------------+
                                  |  [Sensors & Encoders OK]
                                  v
@@ -162,7 +163,7 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
                         v                 |
                +-----------------------------------+
                |               STAND               |
-               | (Accepts Orientation Vector Inputs)|
+               |(Accepts Orientation Vector Inputs)|
                +--------+-----------------+--------+
                         |                 ^
         [cmd_vel > 0]   |                 | [cmd_vel == 0]
