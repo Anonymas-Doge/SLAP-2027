@@ -39,8 +39,8 @@ enum class RobotState : uint8_t {
     SIT,            ///< Crouched resting posture on ground
     STAND,          ///< Active upright standing with roll/pitch orientation control
     LOCOMOTION,     ///< Active walking/trotting state driven by velocity commands
-    RECOVERY,       ///< Fall detection and self-righting sequence
-    ESTOP           ///< Emergency hardware/software cutoff
+    // RECOVERY,       ///< Fall detection and self-righting sequence  /*** not priority ***/
+    ESTOP = 6       ///< Emergency hardware/software cutoff
 };
 
 /**
