@@ -159,7 +159,7 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
                |                SIT                |
                +--------+-----------------+--------+
                         |                 ^
-          [Command Stand]|                 | [Command Sit]
+         [Command Stand]|                 | [Command Sit]
                         v                 |
                +-----------------------------------+
                |               STAND               |

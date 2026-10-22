@@ -1,2 +1,2 @@
-# SLAP-2027
+# SLAP
 Software for UCI Zotbotic's Self-Leveling Anteater Project (SLAP)

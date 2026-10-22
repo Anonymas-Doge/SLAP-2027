@@ -40,9 +40,8 @@ The Teensy 4.1 executes all hard real-time tasks. It operates on a hybrid archit
 |  |  | Encoder Signal Processing        |   | IMU Sensor Filtering                           |  |  |
 |  |  |  - Read Quadrature / SPI / CAN   |   |  - Sample Accelerometer & Gyroscope            |  |  |
 |  |  |  - Compute q_actual & q_dot      |   |  - Run Mahony / Madgwick Filter                |  |  |
-|  |  +---------------+------------------+   +-----------------------+------------------------+  |  |
-|  |                  |                                              |                           |  |
-|  |                  v                                              v                           |  |
+|  |  +----------------------------------+   +------------------------------------------------+  |  |
+|  |                                                                                             |  |
 |  |  +----------------------------------+   +------------------------------------------------+  |  |
 |  |  | Closed-Loop Motor Control        |   | Safety & Fault Interlocks                      |  |  |
 |  |  |  - Joint Position/Velocity PID   |   |  - Tracking Error: |q_tgt - q_act| > threshold |  |  |
