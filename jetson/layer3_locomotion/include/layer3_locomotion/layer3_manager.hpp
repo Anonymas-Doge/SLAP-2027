@@ -8,7 +8,7 @@
 #include <std_msgs/msg/u_int8.hpp>
 
 
-#include "quadruped_types.hpp"
+#include "layer3_locomotion/quadruped_types.hpp"
 
 namespace quadruped::locomotion {
 

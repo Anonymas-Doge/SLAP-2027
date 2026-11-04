@@ -8,6 +8,8 @@
  * and portable between desktop/embedded C++ compilers (C++17).
  */
 
+// Copy of Root file for Layer3A
+
 #pragma once
 
 #include <cstdint>
