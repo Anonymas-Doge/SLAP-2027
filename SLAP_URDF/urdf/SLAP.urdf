@@ -1,0 +1,697 @@
+<?xml version="1.0"?>
+<robot
+  name="TOPS CAD Assembly">
+
+  <link
+    name="base_link">
+  </link>
+
+  <link
+    name="chassis_link">
+    <inertial>
+      <origin
+        xyz="-0.00674549715847858 0.000296696547606025 0.0118055648692431"
+        rpy="0 0 0" />
+      <mass
+        value="3.60222879426993" />
+      <inertia
+        ixx="0.00760437712740927"
+        ixy="4.98591013695657E-07"
+        ixz="-8.29526818648913E-05"
+        iyy="0.00849789665903707"
+        iyz="4.94919751383625E-06"
+        izz="0.00711099585019066" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/chassis_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/chassis_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint
+    name="chassis_joint"
+    type="fixed">
+    <origin
+      xyz="0 0 0" />
+    <parent
+      link="base_link" />
+    <child
+      link="chassis_link" />
+  </joint>
+
+  <link
+    name="FL_HAA">
+    <inertial>
+      <origin
+        xyz="0.0201938080620578 -0.000202781199679098 0.0516999280553676"
+        rpy="0 0 0" />
+      <mass
+        value="0.558028762012573" />
+      <inertia
+        ixx="0.000868750855220859"
+        ixy="2.71411955514796E-06"
+        ixz="4.44157847849211E-06"
+        iyy="0.000521076728499913"
+        iyz="3.9654407048096E-07"
+        izz="0.000479684513061133" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FL_HAA.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FL_HAA.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FL_HAA"
+    type="continuous">
+    <origin
+      xyz="0.105 0.055 -0.0027522"
+      rpy="1.5708 0 1.5708" />
+    <parent
+      link="chassis_link" />
+    <child
+      link="FL_HAA" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="FL_HFE">
+    <inertial>
+      <origin
+        xyz="0.0323002141681416 -0.0483873635074022 0.0417838533184272"
+        rpy="0 0 0" />
+      <mass
+        value="0.699541342151953" />
+      <inertia
+        ixx="0.000662292768335328"
+        ixy="0.00017233052878227"
+        ixz="-1.69300773093004E-05"
+        iyy="0.000517040257502136"
+        iyz="2.54959596627936E-05"
+        izz="0.00105901664416852" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FL_HFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FL_HFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FL_HFE"
+    type="continuous">
+    <origin
+      xyz="0.0610000000017198 0 0.0570000000001782"
+      rpy="0 1.5707963267949 0" />
+    <parent
+      link="FL_HAA" />
+    <child
+      link="FL_HFE" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="FL_KFE">
+    <inertial>
+      <origin
+        xyz="-0.0483283195314868 -0.0728576835275946 -0.0231350489995653"
+        rpy="0 0 0" />
+      <mass
+        value="0.258860763849158" />
+      <inertia
+        ixx="0.000161084439801444"
+        ixy="-4.16534814038773E-05"
+        ixz="1.37164645450375E-06"
+        iyy="0.000125901435666665"
+        iyz="2.06898564608703E-06"
+        izz="0.000200160004517402" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FL_KFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.149019607843137 0.152941176470588 0.133333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FL_KFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FL_KFE"
+    type="continuous">
+    <origin
+      xyz="0.0994987437100913 -0.150000000000391 0.057999999999998"
+      rpy="0 0 0" />
+    <parent
+      link="FL_HFE" />
+    <child
+      link="FL_KFE" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="FR_HAA">
+    <inertial>
+      <origin
+        xyz="-0.020193808980872 -0.000114419210248289 0.0547113997889126"
+        rpy="0 0 0" />
+      <mass
+        value="0.558028756397928" />
+      <inertia
+        ixx="0.000868750856863444"
+        ixy="-1.14512072864362E-06"
+        ixz="-4.41728118087123E-06"
+        iyy="0.000521076705816331"
+        iyz="4.01932778696653E-07"
+        izz="0.00047968455600824" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FR_HAA.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FR_HAA.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FR_HAA"
+    type="continuous">
+    <origin
+      xyz="0.102 -0.055 -0.0027522"
+      rpy="1.5708 0 1.5708" />
+    <parent
+      link="chassis_link" />
+    <child
+      link="FR_HAA" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="FR_HFE">
+    <inertial>
+      <origin
+        xyz="-0.0320173416567354 -0.048575000118241 0.0417838532996047"
+        rpy="0 0 0" />
+      <mass
+        value="0.69954134059435" />
+      <inertia
+        ixx="0.00066249171610247"
+        ixy="-0.000172246549082199"
+        ixz="1.69051176993707E-05"
+        iyy="0.000516841306750232"
+        iyz="2.55125157580018E-05"
+        izz="0.00105901664140058" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FR_HFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FR_HFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FR_HFE"
+    type="continuous">
+    <origin
+      xyz="-0.0610000000099869 0 0.0599999999999569"
+      rpy="3.14159265358979 -1.5707963267949 0" />
+    <parent
+      link="FR_HAA" />
+    <child
+      link="FR_HFE" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="FR_KFE">
+    <inertial>
+      <origin
+        xyz="0.0483283200939458 -0.0728576831532276 -0.02313504895965"
+        rpy="0 0 0" />
+      <mass
+        value="0.258860763855111" />
+      <inertia
+        ixx="0.000161084150513816"
+        ixy="4.16532906135806E-05"
+        ixz="-1.37167261387802E-06"
+        iyy="0.000125901309820202"
+        iyz="2.06896818580989E-06"
+        izz="0.000200160419628103" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FR_KFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.149019607843137 0.152941176470588 0.133333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/FR_KFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="FR_KFE"
+    type="continuous">
+    <origin
+      xyz="-0.0994987437140164 -0.149999999997773 0.0579999999999998"
+      rpy="0 0 0" />
+    <parent
+      link="FR_HFE" />
+    <child
+      link="FR_KFE" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="BL_HAA">
+    <inertial>
+      <origin
+        xyz="0.020193809127106 -0.000114419289587693 -0.05571139976583"
+        rpy="0 0 0" />
+      <mass
+        value="0.558028758974316" />
+      <inertia
+        ixx="0.000868750857443138"
+        ixy="1.14512075728258E-06"
+        ixz="-4.41728116391802E-06"
+        iyy="0.000521076706213277"
+        iyz="-4.01932579553485E-07"
+        izz="0.000479684556214402" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BL_HAA.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BL_HAA.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="BL_HAA"
+    type="continuous">
+    <origin
+      xyz="-0.09065 0.055 -0.0027522"
+      rpy="1.5708 0 1.5708" />
+    <parent
+      link="chassis_link" />
+    <child
+      link="BL_HAA" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="BL_HFE">
+    <inertial>
+      <origin
+        xyz="0.0377204534146875 -0.0419198109655569 0.0286205156452966"
+        rpy="0 0 0" />
+      <mass
+        value="0.685905480563983" />
+      <inertia
+        ixx="0.000597724032888476"
+        ixy="0.000177152454188708"
+        ixz="-2.04139517751288E-05"
+        iyy="0.000558397568609842"
+        iyz="2.28022456919397E-05"
+        izz="0.00103638702101733" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BL_HFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BL_HFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="BL_HFE"
+    type="continuous">
+    <origin
+      xyz="0.0740000000029285 0 -0.0610000000009706"
+      rpy="0 1.5707963267949 0" />
+    <parent
+      link="BL_HAA" />
+    <child
+      link="BL_HFE" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="BL_KFE">
+    <inertial>
+      <origin
+        xyz="0.0339985105303406 -0.0805478946153706 -0.0208649512575457"
+        rpy="0 0 0" />
+      <mass
+        value="0.258860654892997" />
+      <inertia
+        ixx="0.000175040591744592"
+        ixy="3.23926264597116E-05"
+        ixz="9.65910628566331E-07"
+        iyy="0.000111945209517278"
+        iyz="-2.28672779047605E-06"
+        izz="0.000200160013140518" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BL_KFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BL_KFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="BL_KFE"
+    type="continuous">
+    <origin
+      xyz="0.11999644374382 -0.134167259376948 0.000999999997025408"
+      rpy="3.14159265354861 0 -3.14159265358979" />
+    <parent
+      link="BL_HFE" />
+    <child
+      link="BL_KFE" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="BR_HAA">
+    <inertial>
+      <origin
+        xyz="0.0201938080040964 -0.000202781244257938 0.0516999280281645"
+        rpy="0 0 0" />
+      <mass
+        value="0.558028761170187" />
+      <inertia
+        ixx="0.000868750855029488"
+        ixy="2.71411952197672E-06"
+        ixz="4.44157857253795E-06"
+        iyy="0.00052107672841309"
+        iyz="3.96543869299643E-07"
+        izz="0.000479684512932597" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BR_HAA.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BR_HAA.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="BR_HAA"
+    type="continuous">
+    <origin
+      xyz="-0.0946500000047895 -0.0549999999896037 -0.00275216928188031"
+      rpy="1.5707963267949 0 -1.5707963267949" />
+    <parent
+      link="chassis_link" />
+    <child
+      link="BR_HAA" />
+    <axis
+      xyz="0 0 -1" />
+  </joint>
+  <link
+    name="BR_HFE">
+    <inertial>
+      <origin
+        xyz="-0.0386572860933837 -0.0434770589126011 0.0417838536131456"
+        rpy="0 0 0" />
+      <mass
+        value="0.699541365526004" />
+      <inertia
+        ixx="0.000610562454617418"
+        ixy="-0.000185837968968479"
+        ixz="2.03916269888197E-05"
+        iyy="0.000568770604536076"
+        iyz="2.28222123172462E-05"
+        izz="0.00105901668123021" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BR_HFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.749019607843137 0.749019607843137 0.749019607843137 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BR_HFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="BR_HFE"
+    type="continuous">
+    <origin
+      xyz="0.0609999999942884 0 0.057000000006366"
+      rpy="0 1.5707963267949 0" />
+    <parent
+      link="BR_HAA" />
+    <child
+      link="BR_HFE" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+  <link
+    name="BR_KFE">
+    <inertial>
+      <origin
+        xyz="0.0339985106691494 -0.0805478945652445 -0.023135048718487"
+        rpy="0 0 0" />
+      <mass
+        value="0.258860654851475" />
+      <inertia
+        ixx="0.000175039958546878"
+        ixy="3.23923609229721E-05"
+        ixz="-9.65548410087239E-07"
+        iyy="0.000111945098136343"
+        iyz="2.28688097413133E-06"
+        izz="0.000200160757627372" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BR_KFE.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.149019607843137 0.152941176470588 0.133333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://SLAP_URDF/meshes/BR_KFE.STL" />
+      </geometry>
+    </collision>
+  </link>
+  <joint
+    name="BR_KFE"
+    type="continuous">
+    <origin
+      xyz="-0.119996443756263 -0.134167259371207 0.0579999998523434"
+      rpy="0 0 0" />
+    <parent
+      link="BR_HFE" />
+    <child
+      link="BR_KFE" />
+    <axis
+      xyz="0 0 1" />
+  </joint>
+</robot>
