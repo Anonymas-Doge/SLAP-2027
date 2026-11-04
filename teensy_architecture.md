@@ -120,6 +120,7 @@ Runs inside a dedicated hardware timer interrupt service routine (e.g., Teensy `
 ## 4. Development Setup for Teensy 4.1
 
 The recommended development environment for compiling Micro-ROS for Teensy 4.1 is **PlatformIO** (VS Code Extension).
+*WARNING* Micro-ROS can only be installed or updated in WSL.
 
 ### Install VS Code and PlatformIO
 1. Download and install [Visual Studio Code](https://code.visualstudio.com/).
