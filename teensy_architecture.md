@@ -1,14 +1,14 @@
 # Teensy 4.1 Software Architecture & Micro-ROS Setup Guide
 
 **Target Hardware:** Teensy 4.1 Microcontroller (ARM Cortex-M7 @ 600 MHz)  
-**Role:** Hard Real-Time Control, Encoder Feedback Decoding, Analytical Inverse Kinematics, IMU Filtering, & Hardware Safety  
+**Role:** Real-Time Command Coordination, Analytical Inverse Kinematics, BNO085 Orientation Handling, & Hardware Safety  
 **Communication Link:** Micro-ROS over USB CDC Serial (`3,000,000` Baud) to NVIDIA Jetson Orin Nano  
 
 ---
 
 ## 1. Teensy Software Architecture Overview
 
-The Teensy 4.1 executes all hard real-time tasks. It operates on a hybrid architecture: high-frequency timer interrupt service routines (ISRs) handle motor PID control and encoder decoding, while a non-blocking main execution loop processes Micro-ROS client tasks and Layer 2 Inverse Kinematics.
+The Teensy 4.1 executes real-time command coordination and robot-level processing. A non-blocking main loop handles Micro-ROS and Layer 2 inverse kinematics. A periodic control task sends joint commands over CAN-FD through the MCP2518FD to 12 moteus r4.11 controllers and consumes their status feedback. Each moteus controller closes its own motor control loop, including PID; the Teensy does not implement a second joint PID loop or directly decode motor encoder signals. The BNO085 provides fused orientation reports to the Teensy.
 
 ```
 +---------------------------------------------------------------------------------------------------+
@@ -34,19 +34,19 @@ The Teensy 4.1 executes all hard real-time tasks. It operates on a hybrid archit
 |                                          | Joint Command Vector (q_target)                        |
 |                                          v                                                        |
 |  +---------------------------------------------------------------------------------------------+  |
-|  | Layer 1: Hardware Control, Encoder Processing & Safety (Timer ISR @ 1 kHz)                  |  |
+|  | Layer 1: CAN-FD Commands, Feedback & Safety (Periodic Task)                                 |  |
 |  |                                                                                             |  |
 |  |  +----------------------------------+   +------------------------------------------------+  |  |
-|  |  | Encoder Signal Processing        |   | IMU Sensor Filtering                           |  |  |
-|  |  |  - Read Quadrature / SPI / CAN   |   |  - Sample Accelerometer & Gyroscope            |  |  |
-|  |  |  - Compute q_actual & q_dot      |   |  - Run Mahony / Madgwick Filter                |  |  |
+|  |  | Moteus CAN-FD Interface          |   | BNO085 Orientation Reports                     |  |  |
+|  |  |  - MCP2518FD to 12 moteus r4.11  |   |  - Read fused rotation / accel / gyro          |  |  |
+|  |  |  - Send joint targets; read state|   |  - Validate reports and coordinate frames      |  |  |
 |  |  +----------------------------------+   +------------------------------------------------+  |  |
 |  |                                                                                             |  |
 |  |  +----------------------------------+   +------------------------------------------------+  |  |
-|  |  | Closed-Loop Motor Control        |   | Safety & Fault Interlocks                      |  |  |
-|  |  |  - Joint Position/Velocity PID   |   |  - Tracking Error: |q_tgt - q_act| > threshold |  |  |
-|  |  |  - Feedforward Torque Output     |   |  - Joint Limit Clamping                        |  |  |
-|  |  |  - Output to Motor Drivers/Servos|   |  - Serial Watchdog (> 50 ms timeout -> E-Stop) |  |  |
+|  |  | Joint Command Coordination       |   | Safety & Fault Interlocks                      |  |  |
+|  |  |  - Map 12 joint targets to IDs   |   |  - CAN and controller fault monitoring         |  |  |
+|  |  |  - Position/velocity/feedforward |   |  - Joint Limit Clamping                        |  |  |
+|  |  |  - No Teensy-side motor PID      |   |  - Command-age watchdog and E-Stop             |  |  |
 |  |  +----------------------------------+   +------------------------------------------------+  |  |
 |  |                                                                                             |  |
 |  +------------------------------+--------------------------------------------------------------+  |
@@ -54,7 +54,11 @@ The Teensy 4.1 executes all hard real-time tasks. It operates on a hybrid archit
 +---------------------------------|-----------------|---------------|-------------------------------+
                                   |                 |               |                               
                                   v                 |               |                               
-                              [Motors]            [IMU]     [Motor Encoders]                        
+                                  +---[MCP2518FD]---+           [BNO085]                                           
+                                        |     ^                                               
+                                        v     |   
+                                   [12 moteus r4.11]                                      
+                                                                              
 
 ```
 
@@ -78,27 +82,29 @@ Executes within the main loop or a high-priority software timer.
 
 ---
 
-### Layer 1: Hardware I/O, PID Control & Safety Interrupt ($1\text{ kHz}$)
-Runs inside a dedicated hardware timer interrupt service routine (e.g., Teensy `IntervalTimer` at $1000\text{ Hz}$).
+### Layer 1: CAN-FD I/O, Sensor Data & Safety (Periodic Task)
+Runs as a scheduled, bounded task. Keep Micro-ROS callbacks and CAN transactions out of long blocking sections; choose command and status update rates to match the CAN-FD bus and controller configuration.
 
-#### 1. Motor Encoder Processing
-* Samples hardware quadrature pins, magnetic absolute SPI encoders, or CAN telemetry.
-* Calculates actual joint positions $\mathbf{q}_{\text{actual}}$ and computes filtered angular velocity $\mathbf{\dot{q}}_{\text{actual}}$ using a digital low-pass filter:
-  $$\mathbf{\dot{q}}[k] = (1 - \alpha) \cdot \mathbf{\dot{q}}[k-1] + \alpha \cdot \frac{\mathbf{q}[k] - \mathbf{q}[k-1]}{\Delta t}$$
+#### 1. Moteus CAN-FD Command and Feedback
+* Communicates with 12 moteus r4.11 motor controllers through the MCP2518FD CAN-FD controller.
+* Maps each joint to a configured moteus CAN ID and sends position targets (and optional velocity or torque feedforward fields, as configured).
+* Reads controller status, including measured position, velocity, and faults, for `/joint_states` and safety checks. The Teensy does not sample motor encoder pins.
+* The moteus controllers perform motor-level closed-loop control/PID. Do not implement a duplicate joint PID loop on the Teensy. CAN bitrates, command cadence, IDs, termination, and MCP2518FD driver configuration must match the physical network.
 
-#### 2. Closed-Loop Motor PID Control
-* Evaluates error for each joint: $e_i = q_{\text{target}, i} - q_{\text{actual}, i}$.
-* Computes PID torque/PWM output:
-  $$u_i(t) = K_p e_i(t) + K_i \int e_i(t) dt + K_d \frac{de_i(t)}{dt} + \tau_{\text{feedforward}}$$
+#### 2. Joint Command and Feedback Handling
+* Converts the 12-element joint target vector into the units and per-joint limits expected by the configured moteus controllers.
+* Publishes controller-reported position, velocity, and effort/torque telemetry where available. Mark unavailable or invalid telemetry rather than fabricating values.
+* Validate commands, enforce joint bounds, detect stale feedback, and handle controller faults before continuing operation.
 
-#### 3. IMU Processing ($200 - 500\text{ Hz}$)
-* Reads 6-axis / 9-axis raw IMU register data over SPI ($20\text{ MHz}$) or $I^2C$ ($400\text{ kHz}$).
-* Runs a Mahony or Madgwick orientation filter to compute body quaternions $\mathbf{q}_{\text{imu}}$, roll/pitch angles, and angular velocity rates $\boldsymbol{\omega}_{\text{gyro}}$.
+#### 3. BNO085 IMU Processing
+* Reads BNO085 reports over SPI. Use its fused rotation-vector/orientation report instead of running a separate Mahony or Madgwick fusion filter on the Teensy.
+* Publish orientation, angular velocity, and linear acceleration with correct frame IDs, units, and timestamps. Check report validity and handle sensor reset/reinitialization; configure report types and update rates for the application.
 
 #### 4. Hardware Safety Interlocks
-* **Encoder Tracking Error Guard:** If $|q_{\text{target}, i} - q_{\text{actual}, i}| > \theta_{\mathit{maxerror}}$ for $> 50\text{ ms}$, disables motor drivers immediately.
+* **Joint Tracking Error Guard:** If valid moteus-reported position differs from target by more than $\theta_{\mathit{maxerror}}$ for $> 50\text{ ms}$, request the configured safe motor state and raise a fault.
 * **Joint Angle Limit Clamping:** Hard-stops target commands if they fall outside physical leg bounds.
-* **Serial Watchdog:** If no valid Micro-ROS heartbeat is received from the Jetson for $> 50\text{ ms}$, forces the robot into a passive damping hold or controlled sit.
+* **Command Watchdog:** If no valid command is received from the Jetson for the configured timeout, request the configured safe state from all moteus controllers. Choose and validate the safe action for the robot mechanics.
+* **CAN/Controller Watchdog:** Detect missing responses, stale status, and reported moteus faults; transition to the configured safe state and report the fault.
 * **E-Stop Line:** Dedicated digital interrupt pin that triggers instant hardware driver shutdown.
 
 ---
@@ -114,6 +120,8 @@ Runs inside a dedicated hardware timer interrupt service routine (e.g., Teensy `
 | `/e_stop` | `std_msgs/msg/Bool` | Sub | Event | Triggers emergency stop. |
 | `/joint_states` | `sensor_msgs/msg/JointState` | Pub | $50-100\text{ Hz}$ | Encoder position ($\mathbf{q}$), velocity ($\mathbf{\dot{q}}$), and effort ($\boldsymbol{\tau}$). |
 | `/imu/data` | `sensor_msgs/msg/Imu` | Pub | $100-200\text{ Hz}$ | Orientation quaternion, angular rates, linear acceleration. |
+
+Joint state and safety logic use moteus status telemetry carried over CAN-FD. Motor position PID and encoder-level feedback run on the moteus r4.11 controllers, not in Teensy firmware.
 
 ---
 

@@ -8,7 +8,7 @@
 
 ## 1. System Overview
 
-This document specifies the software architecture for a 12-DOF quadruped (robot dog). High-level autonomy, state estimation, gait planning, and neural network inference execute on an **NVIDIA Jetson Orin Nano**. Low-level motor PID/FOC control, encoder feedback processing, inverse kinematics, IMU filtering, and hardware safety checks execute on a **Teensy 4.1 microcontroller**. Communication between the two systems occurs via **Micro-ROS over USB Serial CDC**.
+This document specifies the software architecture for a 12-DOF quadruped (robot dog). High-level autonomy, state estimation, gait planning, and neural network inference execute on an **NVIDIA Jetson Orin Nano**. Inverse kinematics, command coordination, BNO085 report handling, and robot-level safety checks execute on a **Teensy 4.1 microcontroller**. The Teensy communicates with 12 **moteus r4.11** motor controllers over CAN-FD through an **MCP2518FD** controller. Motor commutation, encoder feedback, and motor PID loops run on the moteus controllers; Teensy firmware does not implement a duplicate motor PID. Jetson-Teensy communication occurs via **Micro-ROS over USB Serial CDC**.
 
 ### Key Control Inputs
 
@@ -63,16 +63,19 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
 |                                          | Target Joint Commands (q_1..12)                        |
 |                                          v                                                        |
 |  +---------------------------------------------------------------------------------------------+  |
-|  | Layer 1: Hardware I/O, PID Control & Safety (500 Hz - 1 kHz)                                |  |
-|  |  - Motor Encoder Reading (Quadrature/SPI/CAN) -> Joint Position (q) & Velocity (q_dot)      |  |
-|  |  - Closed-Loop Position/Velocity PID & Feedforward Torque Control                           |  |
-|  |  - Fast IMU Sampling (Madgwick/Mahony Filter) & Encoder Tracking Safety Interlocks          |  |
+|  | Layer 1: CAN-FD Commands, Feedback & Safety (Periodic Task)                                 |  |
+|  |  - MCP2518FD CAN-FD link to 12 moteus r4.11 controllers                                     |  |
+|  |  - Send joint targets; receive position, velocity, and fault telemetry                      |  |
+|  |  - BNO085 fused orientation reports & robot-level safety checks                             |  |
 |  +--------------------------------+------------------------------------------------------------+  |
 |                                   |           ^              ^                                    |
 +-----------------------------------|-----------|--------------|------------------------------------+
                                     |           |              |                                    
-                                    v           |              |                                    
-                                 [Motors]     [IMU]    [Motor Encoders]                             
+                                    v           |              |
+                                     [MCP2518FD]            [BNO085]                                           
+                                       |     ^                                               
+                                       v     |   
+                                  [12 moteus r4.11]                      
 ```
 
 ---
@@ -99,7 +102,7 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
 #### Option 3B: Isaac Lab Reinforcement Learning Policy (`NEURAL_RL` Mode)
 * **Execution Environment:** C++ / Python ROS 2 Node leveraging TensorRT / ONNX Runtime ($50\text{ Hz}$).
 * **Responsibilities:**
-  * Assembles state observation vector $O_t$ using actual joint encoder data ($\mathbf{q}_{\text{actual}}, \mathbf{\dot{q}}_{\text{actual}}$) received from Layer 1 via `/joint_states`:
+  * Assembles state observation vector $O_t$ using measured joint position/velocity telemetry from the moteus controllers, relayed by the Teensy via `/joint_states`:
     $$O_t = [v_{\text{cmd}}, \boldsymbol{\omega}_{\text{gyro}}, \mathbf{g}_{\text{projected}}, \mathbf{q}_{\text{actual}}, \mathbf{\dot{q}}_{\text{actual}}, \mathbf{a}_{t-1}]$$
   * Runs forward inference pass through an ONNX/TensorRT compiled actor network trained in NVIDIA Isaac Lab.
   * Scales output action vector $A_t$ to joint targets:
@@ -112,16 +115,13 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
   * **In `ALGORITHMIC` Mode:** Receives Cartesian foot positions $[x, y, z]$ from Layer 3A, applies body orientation matrix transformations ($\phi, \theta, \psi, \Delta z$), integrates IMU-based dynamic balance adjustments, and solves analytical 3-DOF geometric IK for all 12 joints.
   * **In `NEURAL_RL` Mode (Passthrough):** Bypasses Cartesian IK calculations and passes incoming `/joint_targets` directly to Layer 1.
 
-### Layer 1: Hardware I/O, PID Control & Safety (Teensy 4.1)
-* **Execution Environment:** Timer Interrupt Service Routine (ISR) / Hard Real-Time ($500\text{ Hz} - 1\text{ kHz}$).
+### Layer 1: CAN-FD I/O, Sensor Reports & Safety (Teensy 4.1)
+* **Execution Environment:** Bounded periodic task coordinated with the Micro-ROS loop. Select command and feedback rates to fit the CAN-FD bus and moteus configuration.
 * **Responsibilities:**
-  * **Motor Encoder Processing:** 
-    * Reads raw motor encoder hardware signals (Quadrature, SPI/SSI absolute magnetic encoders, or CAN telemetry).
-    * Decodes actual joint angles $\mathbf{q}_{\text{actual}}$ and computes filtered angular velocities $\mathbf{\dot{q}}_{\text{actual}}$ via digital low-pass filtering.
-    * Streams encoder positions, velocities, and estimated currents to the Jetson via `/joint_states` at $50 - 100\text{ Hz}$.
-  * **Closed-Loop Joint Control:** Executes real-time PID/FOC loops using error vectors between target joint commands ($\mathbf{q}_{\text{target}}$) and measured encoder feedback ($\mathbf{q}_{\text{actual}}$).
-  * **IMU Processing:** Samples body IMU via SPI/I2C at high rates and applies complementary/Madgwick orientation filtering.
-  * **Hardware Safety Enforcement:** Encoder tracking error detection (detects mechanical stalls or motor decoupling), software joint limit enforcement, thermal/current limiting, and loss-of-signal E-stops.
+  * **Moteus CAN-FD interface:** Sends position targets (and configured velocity or torque feedforward fields) to the 12 configured moteus CAN IDs via MCP2518FD. Receives controller-reported position, velocity, and fault/status telemetry. Motor encoder sampling and motor PID remain inside the moteus controllers.
+  * **Joint state publishing:** Relays measured moteus telemetry through `/joint_states` at a rate supported by bus capacity and application needs. Publish effort/current only when valid telemetry is available.
+  * **BNO085 handling:** Reads configured fused rotation-vector/orientation and motion reports over SPI. The BNO085 performs sensor fusion; Teensy validates reports, handles sensor resets, and publishes `/imu/data` with correct units and frames.
+  * **Robot-level safety enforcement:** Validates and bounds targets, monitors stale/missing CAN status and reported controller faults, and applies command-age and E-stop handling. A joint tracking-error guard may use moteus-reported position. The Teensy does not implement motor PID/FOC or motor thermal/current loops.
 
 ---
 
@@ -134,8 +134,8 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
 | `/locomotion_mode` | `std_msgs/msg/UInt8` | Layer 4 (FSM) | Layer 3A, 3B, Teensy | On Change | Mode: `0: ALGORITHMIC`, `1: NEURAL_RL`. |
 | `/foot_targets` | `geometry_msgs/msg/PoseArray` | Layer 3A (Gait) | Layer 2 (Teensy) | 50–100 | Cartesian foot targets $(x,y,z) \times 4$ relative to hips. |
 | `/joint_targets` | `sensor_msgs/msg/JointState` | Layer 3B (RL) / Layer 2 | Layer 1 (Teensy) | 50–100 | Target joint angles ($\theta_1 \dots \theta_{12}$). |
-| `/joint_states` | `sensor_msgs/msg/JointState` | Layer 1 (Teensy) | Layer 3B, Layer 4, RViz | 50–100 | Measured motor encoder positions ($\mathbf{q}$), velocities ($\mathbf{\dot{q}}$), and effort ($\boldsymbol{\tau}$). |
-| `/imu/data` | `sensor_msgs/msg/Imu` | Layer 1 (Teensy) | Layer 2, 3B, 4 | 100–200 | Filtered IMU quaternion, gyro rates, and acceleration. |
+| `/joint_states` | `sensor_msgs/msg/JointState` | Layer 1 (Teensy) | Layer 3B, Layer 4, RViz | 50–100 | Measured position/velocity and available effort telemetry reported by the moteus controllers over CAN-FD. |
+| `/imu/data` | `sensor_msgs/msg/Imu` | Layer 1 (Teensy) | Layer 2, 3B, 4 | 100–200 | BNO085 fused orientation, gyro rates, and acceleration, with configured frames and timestamps. |
 | `/robot_state` | `std_msgs/msg/String` | Layer 4 (FSM) | System-wide | On Change | Active robot state (`SIT`, `STAND`, `LOCOMOTION`, etc.). |
 | `/e_stop` | `std_msgs/msg/Bool` | User / Layer 4 / Layer 1 | Layer 1 (Teensy) | Event | Immediate safety stop trigger. |
 
@@ -151,9 +151,9 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
                                  v
                +-----------------------------------+
                |               INIT                |
-               |(Encoder Calib & Zero Verification)|
+               |(Controller & Sensor Verification)|
                +-----------------+-----------------+
-                                 |  [Sensors & Encoders OK]
+                                 |  [CAN controllers & BNO085 OK]
                                  v
                +-----------------------------------+
                |                SIT                |
@@ -172,7 +172,7 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
                |            LOCOMOTION             |
                |    (Accepts 2D Velocity Vector)   |
                +-----------------+-----------------+
-                                 |  [IMU Roll/Pitch > Threshold OR Encoder Fault]
+                                 |  [IMU Roll/Pitch > Threshold OR CAN/Controller Fault]
                                  v
                +-----------------------------------+
                |             RECOVERY              |
@@ -183,17 +183,17 @@ This document specifies the software architecture for a 12-DOF quadruped (robot 
 
 #### 1. `INIT` State
 * **Active Input:** Hardware diagnostic check.
-* **Processing:** Validates communication links, verifies zero references on all 12 motor encoders, checks encoder signal integrity, and zeros IMU sensor bias before enabling motor power.
+* **Processing:** Validates Micro-ROS, MCP2518FD/CAN-FD communication with all 12 moteus controllers, controller status and required joint references, and BNO085 report validity before enabling motion. Any calibration or zeroing procedure must follow the configured moteus and BNO085 setup.
 
 #### 2. `STAND` State
 * **Active Input:** `/cmd_pose` (`geometry_msgs/msg/Pose`).
-* **Processing:** Velocities are set to zero. Target roll, pitch, yaw, and height ($\phi, \theta, \psi, \Delta z$) are routed to Layer 2 on the Teensy. Layer 1 uses closed-loop encoder PID control to maintain foot plant locations while holding the chassis pose.
+* **Processing:** Velocities are set to zero. Target roll, pitch, yaw, and height ($\phi, \theta, \psi, \Delta z$) are routed to Layer 2 on the Teensy. The Teensy sends resulting joint targets to moteus, whose configured control loops track them; body pose balance uses BNO085 orientation feedback.
 
 #### 3. `LOCOMOTION` State
 * **Active Input:** `/cmd_vel` (`geometry_msgs/msg/Twist`).
 * **Processing:** Depending on `/locomotion_mode`:
   * **If `ALGORITHMIC`:** Layer 3A calculates 3D Bézier foot trajectories based on $v_x, v_y, \omega_z$ and transmits `/foot_targets` to Layer 2 IK on the Teensy.
-  * **If `NEURAL_RL`:** Layer 3B uses live joint encoder positions ($\mathbf{q}$) and velocities ($\mathbf{\dot{q}}$) from `/joint_states` to populate the observation tensor $O_t$, evaluates the policy, and transmits `/joint_targets` directly to Layer 1.
+  * **If `NEURAL_RL`:** Layer 3B uses live moteus-reported joint positions ($\mathbf{q}$) and velocities ($\mathbf{\dot{q}}$) from `/joint_states` to populate the observation tensor $O_t$, evaluates the policy, and transmits `/joint_targets` directly to Layer 1.
 
 ---
 
@@ -207,7 +207,7 @@ To prevent dangerous joint jumps during pathway switching:
 2. **FSM Intercept:** Layer 4 validates that the robot is in a stable operational state (`STAND` or uniform `LOCOMOTION`).
 3. **Joint Trajectory Blend ($0.3\text{ s}$ Window):**
    * Layer 4 freezes external velocity commands.
-   * A cubic Hermite interpolation smoothly shifts active joint target commands from the current pathway's output to the target pathway's output using actual encoder feedback ($\mathbf{q}_{\text{actual}}$) as the initial anchor:
+   * A cubic Hermite interpolation smoothly shifts active joint target commands from the current pathway's output to the target pathway's output using current moteus-reported position ($\mathbf{q}_{\text{actual}}$) as the initial anchor:
      $$\mathbf{q}_{\text{command}}(t) = (1 - \alpha(t)) \cdot \mathbf{q}_{\text{source}} + \alpha(t) \cdot \mathbf{q}_{\text{target}}, \quad \alpha(t) \in [0, 1]$$
 4. **Teensy Pathway Switch:** Teensy receives the updated `/locomotion_mode` value and switches its internal command buffer routing.
 
@@ -215,10 +215,10 @@ To prevent dangerous joint jumps during pathway switching:
 
 Regardless of whether control commands originate from classical IK or an AI policy:
 
-* **Encoder Tracking Error Guard:** If $|\mathbf{q}_{\text{target}} - \mathbf{q}_{\text{actual}}| > \theta_{\text{threshold}}$ for longer than $50\text{ ms}$ (indicating a stall, leg snag, or encoder failure), Layer 1 immediately halts motion and triggers `ESTOP`.
-* **Joint Limits Saturation:** Teensy hard-clamps target joint commands to physical software limits derived from encoder calibration values.
-* **Velocity/Acceleration Caps:** Filters out step discontinuities or `NaN` outputs produced by policy anomalies before commands reach PID loops.
-* **Serial Watchdog:** If Micro-ROS serial connection drops for $> 50\text{ ms}$, Teensy automatically defaults to an **Algorithmic Standing Hold** or **Controlled Sit**.
+* **Joint Tracking Error Guard:** If valid moteus-reported position differs from target by more than $\theta_{\text{threshold}}$ for longer than the configured interval, Layer 1 requests the configured safe motor state and raises a fault.
+* **Joint Limits Saturation:** Teensy hard-clamps target joint commands to configured physical software limits and joint reference offsets.
+* **Velocity/Acceleration Caps:** Filters out step discontinuities or `NaN` outputs produced by policy anomalies before targets are sent over CAN-FD to moteus.
+* **Command and CAN Watchdogs:** On stale Micro-ROS commands, missing CAN responses, or stale controller status, request the configured safe state from the moteus controllers and report the fault. Timeout and safe-state behavior must be configured for the robot mechanics.
 * **Hardware E-Stop Pin:** A dedicated digital GPIO wire directly triggers driver disabling, bypassing Linux/ROS software stacks.
 
 ---
@@ -227,7 +227,7 @@ Regardless of whether control commands originate from classical IK or an AI poli
 
 To deploy an RL model trained in NVIDIA Isaac Lab into this architecture:
 
-1. **Observation Space Matching:** Ensure Isaac Lab observation space includes joint positions ($\mathbf{q}$) and velocities ($\mathbf{\dot{q}}$) formatted to match the `/joint_states` array published by Layer 1.
+1. **Observation Space Matching:** Ensure Isaac Lab observation space includes joint positions ($\mathbf{q}$) and velocities ($\mathbf{\dot{q}}$) formatted to match the `/joint_states` telemetry relayed from moteus by Layer 1.
 2. **Model Export:** Export the trained policy network from PyTorch to ONNX format inside Isaac Lab:
    ```python
    torch.onnx.export(
@@ -242,4 +242,4 @@ To deploy an RL model trained in NVIDIA Isaac Lab into this architecture:
    ```bash
    trtexec --onnx=quadruped_policy.onnx --saveEngine=quadruped_policy.engine --fp16
    ```
-4. **ROS 2 Integration:** Load `quadruped_policy.engine` into the Layer 3B C++ node. The node constructs $O_t$ using live encoder feedback from `/joint_states` and IMU data from `/imu/data`, runs inference, and publishes output actions to `/joint_targets`.
+4. **ROS 2 Integration:** Load `quadruped_policy.engine` into the Layer 3B C++ node. The node constructs $O_t$ using live moteus-reported joint feedback from `/joint_states` and BNO085 data from `/imu/data`, runs inference, and publishes output actions to `/joint_targets`.
