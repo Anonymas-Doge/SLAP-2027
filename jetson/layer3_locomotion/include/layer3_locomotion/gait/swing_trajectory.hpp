@@ -1,0 +1,8 @@
+//
+// Created by root on 11/5/26.
+//
+
+#ifndef BUILD_SWING_TRAJECTORY_HPP
+#define BUILD_SWING_TRAJECTORY_HPP
+
+#endif //BUILD_SWING_TRAJECTORY_HPP

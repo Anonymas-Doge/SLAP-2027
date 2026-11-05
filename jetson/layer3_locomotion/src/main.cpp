@@ -1,10 +1,6 @@
-
-
-
 #include <memory>
 
 #include "layer3_locomotion/layer3_manager.hpp"
-
 
 
 int main(int argc, char** argv) {

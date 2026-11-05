@@ -1,0 +1,20 @@
+# Parameters for Gait Estimation
+
+# ====================================
+#  Phase Clock Parameters
+# ====================================
+
+# Leg Offsets (Order is chosen for most stability)
+"legOffset":
+  "frontLeft": 0.5
+  "frontRight": 0.0
+  "rearLeft": 0.75
+  "rearRight": 0.25
+
+# Period (T)
+"period":
+
+# Duty Factor (ß)
+"dutyFactor":
+  "walk": 0.75
+  "trot": 0.5
