@@ -39,7 +39,7 @@ public:
     explicit PhaseClock(const GaitParams& params);
 
     void advance(float deltaT);
-    LegPhaseState getLegState(LegIndex legIndex) const;
+    [[nodiscard]] LegPhaseState getLegState(LegIndex legIndex) const;
 
     void reset();
 
