@@ -50,9 +50,7 @@ void error_loop() {
 
 // ISR: Layer 1 Control Loop (1 kHz)
 void controlLoopISR() {
-    // 1. Read Motor Encoders -> Populate actual_joint_positions & actual_joint_velocities
-    // 2. Execute Joint PID Loops using target_joint_positions
-    // 3. Perform Encoder Tracking Error & Safety Checks
+    // ...
 }
 
 // Subscriber Callback: Mode Switch
