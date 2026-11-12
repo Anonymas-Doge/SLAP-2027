@@ -2,16 +2,16 @@
 
 #include <cstdint>
 
-#include "quadruped_types.hpp"
 #include "layer1/layer1_config.hpp"
+#include "quadruped_types.hpp"
 
 namespace quadruped::layer1 {
 
 struct ControllerStatus {
     uint8_t can_id{0};
-    float position{0.0f};       // radians
-    float velocity{0.0f};       // radians/second
-    float effort{0.0f};         // controller-reported unit; valid only when flagged
+    float position{0.0f};
+    float velocity{0.0f};
+    float effort{0.0f};
     uint32_t received_at_ms{0};
     bool position_valid{false};
     bool velocity_valid{false};
@@ -19,8 +19,6 @@ struct ControllerStatus {
     bool controller_fault{false};
 };
 
-// Driver boundary. Implementations should do bounded, non-blocking work per
-// call and translate the selected safe action to the configured moteus mode.
 class CanInterface {
 public:
     virtual ~CanInterface() = default;
