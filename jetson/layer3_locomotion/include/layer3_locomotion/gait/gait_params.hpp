@@ -5,8 +5,7 @@
  */
 
 
-#ifndef BUILD_GAIT_PARAMS_HPP
-#define BUILD_GAIT_PARAMS_HPP
+#pragma once
 
 #include <array>
 
@@ -15,11 +14,18 @@
 
 namespace quadruped::locomotion {
 
+
 struct GaitParams {
+
     float period = 1.0f;
     float dutyFactor = 0.75f;
-    std::array<float, NUM_LEGS> offsets{0.5f, 0.0f, 0.75f, 0.25f};
-};
-} // namespace quadruped::locomotion
 
-#endif //BUILD_GAIT_PARAMS_HPP
+    std::array<float, NUM_LEGS> offsets{0.5f, 0.0f, 0.75f, 0.25f};
+    std::array<Vector3f, NUM_LEGS> neutralPositions{Vector3f{0.0f, 0.0f, -0.20f},
+                                                    Vector3f{0.0f, 0.0f, -0.20f},
+                                                    Vector3f{0.0f, 0.0f, -0.20f},
+                                                    Vector3f{0.0f, 0.0f, -0.20f}};
+};
+
+
+} // namespace quadruped::locomotion

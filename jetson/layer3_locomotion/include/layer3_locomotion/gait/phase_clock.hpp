@@ -6,13 +6,14 @@
  *         happens.
  */
 
-#ifndef BUILD_PHASE_CLOCK_HPP
-#define BUILD_PHASE_CLOCK_HPP
+
+#pragma once
 
 #include <array>
 
 #include "layer3_locomotion/gait/gait_params.hpp"
 #include "layer3_locomotion/quadruped_types.hpp"
+
 
 namespace quadruped::locomotion {
 
@@ -51,6 +52,5 @@ private:
     void validateParams() const;
 };
 
-} // namespace quadruped::locomotion
 
-#endif //BUILD_PHASE_CLOCK_HPP
+} // namespace quadruped::locomotion

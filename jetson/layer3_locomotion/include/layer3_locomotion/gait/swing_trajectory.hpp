@@ -1,8 +1,28 @@
-//
-// Created by root on 11/5/26.
-//
+/**
+*  @file swing_trajectory.hpp
+ *  @brief
+ */
 
-#ifndef BUILD_SWING_TRAJECTORY_HPP
-#define BUILD_SWING_TRAJECTORY_HPP
+#pragma once
 
-#endif //BUILD_SWING_TRAJECTORY_HPP
+#include "layer3_locomotion/quadruped_types.hpp"
+
+namespace quadruped::locomotion {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+}

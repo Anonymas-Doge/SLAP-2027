@@ -12,7 +12,10 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_library(gait_core STATIC src/gait/phase_clock.cpp)
+add_library(gait_core STATIC src/gait/phase_clock.cpp
+                             src/gait/stance_trajectory.cpp
+                             src/gait/swing_trajectory.cpp)
+
 add_executable(layer3_node src/main.cpp src/layer3_manager.cpp)
 
 target_include_directories(gait_core PUBLIC

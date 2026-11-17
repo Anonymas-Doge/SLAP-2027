@@ -4,17 +4,30 @@
 #  Phase Clock Parameters
 # ====================================
 
-# Leg Offsets (Order is chosen for most stability)
-"legOffset":
-  "frontLeft": 0.5
-  "frontRight": 0.0
-  "rearLeft": 0.75
-  "rearRight": 0.25
+<node name>:
+  ros__parameters:
 
-# Period (T)
-"period":
+    # Trot Parameters
+    "trot":
 
-# Duty Factor (ß)
-"dutyFactor":
-  "walk": 0.75
-  "trot": 0.5
+
+    # Leg Offsets (Order is chosen for most stability)
+    "legOffset":
+      "frontLeft": 0.5
+      "frontRight": 0.0
+      "rearLeft": 0.75
+      "rearRight": 0.25
+
+    # Period (T)
+    "period": 1.0
+
+    # Duty Factor (ß)
+    "dutyFactor":
+      "walk": 0.75
+      "trot": 0.5
+
+    # Neutral Foot Positions (x, y, z)
+    "neutralFootPositions":
+      "x": 0.0
+      "y": 0.0
+      "z": -0.20
