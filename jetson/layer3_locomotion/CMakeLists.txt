@@ -12,7 +12,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
-add_library(gait_core STATIC src/gait/phase_clock.cpp
+add_library(gait_core STATIC src/gait/gait_params.cpp
+                             src/gait/phase_clock.cpp
                              src/gait/stance_trajectory.cpp
                              src/gait/swing_trajectory.cpp)
 
@@ -50,7 +51,8 @@ if(BUILD_TESTING)
     set(ament_cmake_cpplint_FOUND TRUE)
     ament_lint_auto_find_test_dependencies()
 
-    ament_add_gtest(test_layer3 test/test_phase_clock.cpp)
+    ament_add_gtest(test_layer3 test/test_phase_clock.cpp
+                                test/test_stance_trajectory.cpp)
     target_link_libraries(test_layer3
                           gait_core)
 endif()

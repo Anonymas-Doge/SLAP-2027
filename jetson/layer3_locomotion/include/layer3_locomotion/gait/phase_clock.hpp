@@ -48,8 +48,6 @@ private:
     PhaseState state;
     GaitParams params;
     std::array<LegPhaseState, NUM_LEGS> outputs;
-
-    void validateParams() const;
 };
 
 

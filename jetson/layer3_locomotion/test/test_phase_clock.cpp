@@ -8,7 +8,7 @@ using quadruped::LegIndex;
 using quadruped::NUM_LEGS;
 
 // Walk gait: T = 1.0 s, β = 0.75, lift-off order RL → FL → RR → FR
-static const GaitParams defaultParams{1.0f, 0.75f, {0.5f, 0.0f, 0.75f, 0.25f}};
+static constexpr GaitParams defaultParams{1.0f, 0.75f, 0.05f, {0.5f, 0.0f, 0.75f, 0.25f}};
 
 // Expected values below are hand-calculated from the phase clock formulas
 static constexpr float TOL = 1e-5f;
