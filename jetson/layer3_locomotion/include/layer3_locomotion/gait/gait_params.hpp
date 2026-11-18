@@ -18,7 +18,7 @@ namespace quadruped::locomotion {
 struct GaitParams {
 
     float period = 1.0f; // T
-    float dutyFactor = 0.75f; // ß
+    float dutyFactor = 0.75f; // β
     float stepHeight = 0.05f; // Tunable clearance h
 
     std::array<float, NUM_LEGS> offsets{0.5f, 0.0f, 0.75f, 0.25f};

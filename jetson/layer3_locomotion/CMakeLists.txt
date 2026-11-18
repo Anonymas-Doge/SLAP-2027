@@ -52,7 +52,8 @@ if(BUILD_TESTING)
     ament_lint_auto_find_test_dependencies()
 
     ament_add_gtest(test_layer3 test/test_phase_clock.cpp
-                                test/test_stance_trajectory.cpp)
+                                test/test_stance_trajectory.cpp
+                                test/test_swing_trajectory.cpp)
     target_link_libraries(test_layer3
                           gait_core)
 endif()
