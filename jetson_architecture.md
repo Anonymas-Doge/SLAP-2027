@@ -90,7 +90,7 @@ JetPack 7.2.1 is built on **Ubuntu 24.04 LTS (Noble Numbat)**. The native, offic
 Open a terminal on your Jetson Orin Nano and ensure your system supports UTF-8:
 
 ```bash
-sudo apt update && sudo apt install -y locale
+sudo apt update && sudo apt install -y locales
 sudo locale-gen en_US en_US.UTF-8
 sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 export LANG=en_US.UTF-8
@@ -174,7 +174,8 @@ colcon build --symlink-install
 source install/setup.bash
 
 # Create and build the Micro-ROS Agent workspace
-ros2 run micro_ros_setup create_agent_workspace.sh
+ros2 pkg executables micro_ros_setup
+ros2 run micro_ros_setup create_agent_ws.sh
 ros2 run micro_ros_setup build_agent.sh
 source install/setup.bash
 ```
