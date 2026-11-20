@@ -22,10 +22,16 @@ struct GaitParams {
     float stepHeight = 0.05f; // Tunable clearance h
 
     std::array<float, NUM_LEGS> offsets{0.5f, 0.0f, 0.75f, 0.25f};
+
     std::array<Vector3f, NUM_LEGS> neutralPositions{Vector3f{0.0f, 0.0f, -0.20f},
                                                     Vector3f{0.0f, 0.0f, -0.20f},
                                                     Vector3f{0.0f, 0.0f, -0.20f},
                                                     Vector3f{0.0f, 0.0f, -0.20f}};
+
+    std::array<Vector3f, NUM_LEGS> hipPositions{Vector3f{0.15f, 0.08f, 0.0f},
+                                                Vector3f{0.15f, -0.08f, 0.0f},
+                                                Vector3f{-0.15f, 0.08f, 0.0f},
+                                                Vector3f{-0.15f, -0.08f, 0.0f}};
 };
 
 

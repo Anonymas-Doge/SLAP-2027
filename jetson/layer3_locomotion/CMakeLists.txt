@@ -15,7 +15,8 @@ find_package(std_msgs REQUIRED)
 add_library(gait_core STATIC src/gait/gait_params.cpp
                              src/gait/phase_clock.cpp
                              src/gait/stance_trajectory.cpp
-                             src/gait/swing_trajectory.cpp)
+                             src/gait/swing_trajectory.cpp
+                             src/gait/leg_velocity.cpp)
 
 add_executable(layer3_node src/main.cpp src/layer3_manager.cpp)
 
@@ -53,7 +54,8 @@ if(BUILD_TESTING)
 
     ament_add_gtest(test_layer3 test/test_phase_clock.cpp
                                 test/test_stance_trajectory.cpp
-                                test/test_swing_trajectory.cpp)
+                                test/test_swing_trajectory.cpp
+                                test/test_leg_velocity.cpp)
     target_link_libraries(test_layer3
                           gait_core)
 endif()

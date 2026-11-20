@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 #include "layer3_locomotion/gait/stance_trajectory.hpp"
 
 using namespace quadruped::locomotion;
@@ -152,10 +154,77 @@ TEST(StanceTrajectoryTest, EachLegUsesItsOwnNeutral) {
     }
 }
 
-TEST(StanceTrajectoryTest, TurnRateIsIgnoredForNow) {
-    // omega_z is not applied yet (A4). Update this test when turning is added.
-    const FootTarget straight = computeStanceTarget(Twist2D{0.2f, 0.0f, 0.0f}, walkParams, LegIndex::FL, 0.0f);
-    const FootTarget turning = computeStanceTarget(Twist2D{0.2f, 0.0f, 1.0f}, walkParams, LegIndex::FL, 0.0f);
-    expectVectorNear(turning.position, straight.position);
-    expectVectorNear(turning.velocity, straight.velocity);
+// ============================================================================
+// TURNING (A4)
+//   v_leg = (vx − ωz·ry, vy + ωz·rx),  r = hip + neutral (x, y)
+//   Default hips: FL (+0.15, +0.08), FR (+0.15, −0.08), RL (−0.15, +0.08), RR (−0.15, −0.08)
+// ============================================================================
+
+TEST(StanceTrajectoryTest, TurnInPlaceFootVelocities) {
+    // ωz = +0.5 (turning left), neutral x = y = 0 → r = hip
+    //   FL: v_leg = (−0.5·0.08, 0.5·0.15) = (−0.04, +0.075) → foot velocity (+0.04, −0.075)
+    //   FR: v_leg = (+0.04, +0.075) → (−0.04, −0.075)
+    //   RL: v_leg = (−0.04, −0.075) → (+0.04, +0.075)
+    //   RR: v_leg = (+0.04, −0.075) → (−0.04, +0.075)
+    const Twist2D turnLeft{0.0f, 0.0f, 0.5f};
+    expectVectorNear(computeStanceTarget(turnLeft, walkParams, LegIndex::FL, 0.5f).velocity,
+                     Vector3f{0.04f, -0.075f, 0.0f});
+    expectVectorNear(computeStanceTarget(turnLeft, walkParams, LegIndex::FR, 0.5f).velocity,
+                     Vector3f{-0.04f, -0.075f, 0.0f});
+    expectVectorNear(computeStanceTarget(turnLeft, walkParams, LegIndex::RL, 0.5f).velocity,
+                     Vector3f{0.04f, 0.075f, 0.0f});
+    expectVectorNear(computeStanceTarget(turnLeft, walkParams, LegIndex::RR, 0.5f).velocity,
+                     Vector3f{-0.04f, 0.075f, 0.0f});
+}
+
+TEST(StanceTrajectoryTest, TurnInPlaceFootPath) {
+    // FL, walk T_stance = 0.75: start = v_leg × 0.75 × 0.5 = (−0.015, +0.028125)
+    // Foot slides from behind-left to ahead-right of the hip (forward and right)
+    const Twist2D turnLeft{0.0f, 0.0f, 0.5f};
+    expectVectorNear(computeStanceTarget(turnLeft, walkParams, LegIndex::FL, 0.0f).position,
+                     Vector3f{-0.015f, 0.028125f, -0.20f});
+    expectVectorNear(computeStanceTarget(turnLeft, walkParams, LegIndex::FL, 1.0f).position,
+                     Vector3f{0.015f, -0.028125f, -0.20f});
+}
+
+TEST(StanceTrajectoryTest, TurnInPlaceAllFeetSameSpeed) {
+    // Hips are equidistant from the center → |v_leg| = 0.5 × √(0.15² + 0.08²) = 0.085 for every leg
+    const Twist2D turnLeft{0.0f, 0.0f, 0.5f};
+    for (std::size_t i = 0; i < NUM_LEGS; ++i) {
+        const Vector3f v = computeStanceTarget(turnLeft, walkParams, static_cast<LegIndex>(i), 0.5f).velocity;
+        EXPECT_NEAR(std::hypot(v.x, v.y), 0.085f, TOL) << "leg index " << i;
+    }
+}
+
+TEST(StanceTrajectoryTest, TurnRightMirrorsTurnLeft) {
+    // Reversing ωz reverses every foot velocity
+    for (std::size_t i = 0; i < NUM_LEGS; ++i) {
+        const auto leg = static_cast<LegIndex>(i);
+        const Vector3f left = computeStanceTarget(Twist2D{0.0f, 0.0f, 0.5f}, walkParams, leg, 0.5f).velocity;
+        const Vector3f right = computeStanceTarget(Twist2D{0.0f, 0.0f, -0.5f}, walkParams, leg, 0.5f).velocity;
+        expectVectorNear(right, Vector3f{-left.x, -left.y, 0.0f});
+    }
+}
+
+TEST(StanceTrajectoryTest, ForwardPlusTurnCurvesLeft) {
+    // vx = 0.2, ωz = +0.5:
+    //   FR: v_leg = (0.2 + 0.04, 0.075) = (0.24, 0.075) → right feet slide back faster
+    //   FL: v_leg = (0.2 − 0.04, 0.075) = (0.16, 0.075) → left feet slide back slower
+    // Faster right side + slower left side = robot curves left
+    const Twist2D curveLeft{0.2f, 0.0f, 0.5f};
+    expectVectorNear(computeStanceTarget(curveLeft, walkParams, LegIndex::FR, 0.5f).velocity,
+                     Vector3f{-0.24f, -0.075f, 0.0f});
+    expectVectorNear(computeStanceTarget(curveLeft, walkParams, LegIndex::FL, 0.5f).velocity,
+                     Vector3f{-0.16f, -0.075f, 0.0f});
+}
+
+TEST(StanceTrajectoryTest, TurningUsesHipPlusNeutral) {
+    // Feet not directly under the hips (catches r = hip − neutral sign errors):
+    //   FL hip (0.15, 0.08) + neutral (0.01, 0.02) → r = (0.16, 0.10)
+    //   ωz = 0.5 → v_leg = (−0.05, +0.08) → foot velocity (+0.05, −0.08)
+    GaitParams params;
+    params.neutralPositions[static_cast<std::size_t>(LegIndex::FL)] = Vector3f{0.01f, 0.02f, -0.20f};
+    const FootTarget t = computeStanceTarget(Twist2D{0.0f, 0.0f, 0.5f}, params, LegIndex::FL, 0.5f);
+    expectVectorNear(t.velocity, Vector3f{0.05f, -0.08f, 0.0f});
+    expectVectorNear(t.position, Vector3f{0.01f, 0.02f, -0.20f});  // s = 0.5 is still at neutral
 }

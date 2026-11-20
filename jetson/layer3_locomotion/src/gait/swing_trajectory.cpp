@@ -68,7 +68,7 @@ static BezierTargets computeBezierTarget(const std::array<Vector3f, NUM_BEZIER_C
 }
 
 
-FootTarget computeSwingTarget(const GaitParams &params, const Vector3f &p0, const Vector3f &p3, const float progress) {
+FootTarget computeSwingTarget(const GaitParams& params, const Vector3f& p0, const Vector3f& p3, const float progress) {
 
     const float s = std::clamp(progress, 0.0f, 1.0f); // Clamps to handle float values like 1.000000001
     const float controlPointHeight = params.stepHeight * (4.0f / 3.0f); // H = (4/3) * h
