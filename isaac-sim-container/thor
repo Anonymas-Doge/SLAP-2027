@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -eu
+cd "$(dirname "$0")"
+if [[ $(uname -m) != aarch64 ]]; then
+    echo "Run ./thor on the AGX Thor. On the RTX workstation use docker compose up -d sim." >&2
+    exit 1
+fi
+export LOCAL_UID="$(id -u)" LOCAL_GID="$(id -g)"
+group_id() {
+    getent group "$1" | cut -d: -f3
+}
+VIDEO_GID="$(group_id video)"
+RENDER_GID="$(group_id render)"
+export VIDEO_GID="${VIDEO_GID:-$LOCAL_GID}" RENDER_GID="${RENDER_GID:-$LOCAL_GID}"
+mkdir -p ros_ws/src
+exec docker compose -f compose.thor.yaml "$@"

@@ -4,7 +4,9 @@ cd "$(dirname "$0")"
 if (( $# == 0 )); then
     set -- bash --norc -i
 fi
-exec docker compose exec ros bash -ec '
+compose=(docker compose)
+if [[ $(uname -m) == aarch64 ]]; then compose=(./thor); fi
+exec "${compose[@]}" exec ros bash -ec '
     source /opt/ros/jazzy/setup.bash
     source /opt/isaac-ros-4.0.0/local_setup.bash
     if [[ -f install/local_setup.bash ]]; then source install/local_setup.bash; fi

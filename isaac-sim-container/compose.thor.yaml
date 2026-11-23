@@ -1,0 +1,36 @@
+name: zotbotics-thor
+
+x-dds: &dds
+  ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+  RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+  FASTRTPS_DEFAULT_PROFILES_FILE: /etc/fastdds.xml
+  FASTDDS_DEFAULT_PROFILES_FILE: /etc/fastdds.xml
+
+services:
+  ros:
+    platform: linux/arm64
+    build:
+      context: ./ros-image
+      args:
+        ROS_BASE: nvcr.io/nvidia/isaac/ros:noble-ros2_jazzy_d3e84470d576702a380478a513fb3fc6-arm64@sha256:be7abd2bb5ddb4fff5dd5fa251e2e80d59bdd0aa39795f5afcd7cd06dc357bd4
+        CUDA_ARCHS: "110"
+    runtime: nvidia
+    group_add:
+      - "${VIDEO_GID:-44}"
+      - "${RENDER_GID:-109}"
+    network_mode: host
+    init: true
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    working_dir: /workspaces/isaac_ros-dev
+    environment:
+      <<: *dds
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      ISAAC_ROS_WS: /workspaces/isaac_ros-dev
+      HOME: /tmp/isaac-ros-home
+    volumes:
+      - ./fastdds.xml:/etc/fastdds.xml:ro
+      - ./ros_ws:/workspaces/isaac_ros-dev
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - 'mkdir -p "$$HOME" && exec sleep infinity'
