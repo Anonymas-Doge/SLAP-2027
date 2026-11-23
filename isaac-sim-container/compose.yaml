@@ -1,0 +1,57 @@
+name: zotbotics-isaac
+
+x-dds: &dds
+  ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
+  RMW_IMPLEMENTATION: rmw_fastrtps_cpp
+  FASTRTPS_DEFAULT_PROFILES_FILE: /etc/fastdds.xml
+  FASTDDS_DEFAULT_PROFILES_FILE: /etc/fastdds.xml
+
+services:
+  sim:
+    platform: linux/amd64
+    image: nvcr.io/nvidia/isaac-sim:5.1.0@sha256:f3563cb2ba0c18af0b2fb321360dcb73a917b899f879e3213623d6bee484fa54
+    gpus: all
+    network_mode: host
+    init: true
+    user: "1234:1234"
+    working_dir: /isaac-sim
+    environment:
+      <<: *dds
+      ACCEPT_EULA: "${ACCEPT_EULA:?Set ACCEPT_EULA=Y after accepting the NVIDIA Omniverse license}"
+      ROS_DISTRO: jazzy
+      NVIDIA_DRIVER_CAPABILITIES: all
+      ISAACSIM_HOST: "${ISAACSIM_HOST:-127.0.0.1}"
+    volumes:
+      - ./fastdds.xml:/etc/fastdds.xml:ro
+      - ./sim-cache/kit:/isaac-sim/.cache
+      - ./sim-cache/cuda:/isaac-sim/.nv/ComputeCache
+      - ./scenes:/scenes:ro
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        lib=/isaac-sim/exts/isaacsim.ros2.bridge/jazzy/lib
+        test -d "$$lib"
+        export LD_LIBRARY_PATH="$$lib$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}"
+        exec ./runheadless.sh -v --enable isaacsim.ros2.bridge \
+          "--/app/livestream/publicEndpointAddress=$$ISAACSIM_HOST" --/app/livestream/port=49100
+
+  ros:
+    platform: linux/amd64
+    build:
+      context: ./ros-image
+    gpus: all
+    network_mode: host
+    init: true
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    working_dir: /workspaces/isaac_ros-dev
+    environment:
+      <<: *dds
+      NVIDIA_DRIVER_CAPABILITIES: compute,utility
+      ISAAC_ROS_WS: /workspaces/isaac_ros-dev
+      HOME: /tmp/isaac-ros-home
+    volumes:
+      - ./fastdds.xml:/etc/fastdds.xml:ro
+      - ./ros_ws:/workspaces/isaac_ros-dev
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - 'mkdir -p "$$HOME" && exec sleep infinity'
